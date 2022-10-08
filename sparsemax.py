@@ -8,7 +8,9 @@ def flatten_all_but_nth_dim(ctx, x: torch.Tensor):
     """
 
     # transpose batch and nth dim
-    x = x.transpose(0, ctx.dim)
+    if ctx.dim != 0:
+        x = x.transpose(0, ctx.dim)
+    # x = x.transpose(0, ctx.dim)
 
     # Get and save original size in context for backward pass
     original_size = x.size()
@@ -31,7 +33,10 @@ def unflatten_all_but_nth_dim(ctx, x: torch.Tensor):
     x = x.reshape(ctx.original_size)
 
     # Swap batch dim and nth dim
-    return ctx, x.transpose(0, ctx.dim)
+    if ctx.dim != 0:
+        x = x.transpose(0, ctx.dim)
+    # return ctx, x.transpose(0, ctx.dim)
+    return ctx, x
 
 class SparsemaxFunction(torch.autograd.Function):
     @staticmethod
@@ -46,6 +51,7 @@ class SparsemaxFunction(torch.autograd.Function):
 
         # Save operating dimension to context
         ctx.needs_reshaping = input_dim > 2
+        ctx.dim = dim
         ctx.tranpose = (dim == 0) and (input_dim == 2)
 
         if ctx.needs_reshaping:
@@ -140,8 +146,21 @@ class Sparsemax(nn.Module):
 
 
 if __name__ == '__main__':
-    a = torch.tensor([[0, 1.0, -0.2], [3.0, -2.0, 1.0]])
-    # a = torch.tensor([0, 1.0, -0.2])
+    # a = torch.randn((2,3,4))
+    # print(a)
+    # v = sparsemax(a, dim=2)
+    # for i in range(2):
+    #     for j in range(3):
+    #         print(v[i, j, :])
+
+
+    # a = torch.randn((3, ))
+    # print(a)
+    # v = sparsemax(a, dim=0)
+    # print(v)
+
+    a = torch.randn((3, 4))
     print(a)
     v = sparsemax(a, dim=1)
-    print(v)
+    for i in range(3):
+        print(v[i, :])
